@@ -1,0 +1,9 @@
+langchain
+langchain-community
+langchain-openai
+langchain_ollama
+langchain-sandbox
+langgraph
+python-dotenv
+openai
+pandas
