@@ -11,7 +11,7 @@ import sklearn
 import PIL
 import pyarrow
 
-def safe_exec_python(code: str, dataframes: List[pd.DataFrame]) -> Dict[str, Any]:
+def safe_exec_python(code: str, dataframes: List[pd.DataFrame], image_bytes) -> Dict[str, Any]:
     # Minimal sandbox: no builtins except a tiny whitelist, no file/network ops
     # allowed_builtins = {
     #     "len": len,
@@ -36,20 +36,28 @@ def safe_exec_python(code: str, dataframes: List[pd.DataFrame]) -> Dict[str, Any
         "pyarrow": pyarrow,
         # Provide recent SQL results
         "dataframes": dataframes,
+        "image_bytes": image_bytes
     }
     stdout = StringIO()
+    stderr = StringIO()
     try:
         import sys
         old_stdout = sys.stdout
+        old_stderr = sys.stderr
         sys.stdout = stdout
+        sys.stderr = stderr
         exec(  # noqa: S102 (we're sandboxing carefully)
             code,
             safe_globals,
             {},
         )
         sys.stdout = old_stdout
+        sys.stderr = old_stderr
     except Exception:
         sys.stdout = old_stdout
         return {"ok": False, "stdout": stdout.getvalue(), "error": traceback.format_exc()}
     
+    if len(stderr.getvalue()) > 0:
+        return {"ok": False, "stdout": stdout.getvalue(), "error": stderr.getvalue()}
+
     return {"ok": True, "stdout": stdout.getvalue()}

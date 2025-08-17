@@ -5,6 +5,9 @@ langchain_ollama
 langchain-sandbox
 langgraph
 python-dotenv
+notebook 
+ipykernel
+ipywidgets
 openai
 pandas
 numpy
