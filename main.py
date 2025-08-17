@@ -2,27 +2,41 @@
 import os
 from typing import Any, Dict, List, Optional, TypedDict, Literal
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain import hub
 from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool
 from dotenv import load_dotenv
+import pandas as pd
 from database import Database
+from python import safe_exec_python
 
 load_dotenv()
 
 # ---------------------------
 # Configuration & clients
 # ---------------------------
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.poe.com/v1")
 LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-coder-v2")
 DB_PATH = os.getenv("DB_PATH", "./data.db")
 
 DB = Database(DB_PATH)
 
-llm = ChatOllama(
-    model=LLM_MODEL, 
+# llm = ChatOllama(
+#     model=LLM_MODEL, 
+#     temperature=0,
+#     streaming=True,
+# )
+llm = ChatOpenAI(
+    api_key=OPENAI_API_KEY, 
+    base_url=OPENAI_API_BASE,
     temperature=0,
     streaming=True,
 )
+
+# Keep DataFrames from recent SQL calls for the Python sandbox
+DATAFRAMES_RING: List[pd.DataFrame] = []
 
 @tool
 def execute_sql(queries: list[str]) -> list[Dict[str, Any]]:
@@ -50,7 +64,7 @@ def execute_sql(queries: list[str]) -> list[Dict[str, Any]]:
             print(f"SQL result:\n{result}\n-----\n")
 
             result["sql"] = sql
-            # DATAFRAMES_RING.append(pd.DataFrame(result["rows"], columns=result["columns"]))
+            DATAFRAMES_RING.append(pd.DataFrame(result["rows"], columns=result["columns"]))
             # preview = summarize_rows(result)
         except Exception as e:
             result = {
@@ -62,21 +76,60 @@ def execute_sql(queries: list[str]) -> list[Dict[str, Any]]:
 
     return results
 
+@tool
+def execute_python(code: str) -> str:
+    """Execute a safe Python script and print out results.
+    For any images, print as Markdown image format.
+    A variable `dataframes` is populated with a list of any previous SQL results as pandas DataFrames.
+    The following packages are available.
+
+    - pd
+    - numpy
+    - matplotlib
+    - seaborn
+    - scipy
+    - statsmodels
+    - sklearn
+    - PIL
+    - pyarrow
+
+    Args:
+        code: Python script to execute
+    Return:
+        The print out result
+    """
+    if not code:
+        raise ValueError("Python action missing 'python' field")
+    
+    print(f"Executing Python:\n{code}\n")
+
+    result = ""
+    execResult = safe_exec_python(code, DATAFRAMES_RING.copy())
+    if execResult["ok"]:
+        result = execResult["stdout"].strip()
+        print(f"Python result:\n{result}\n-----\n")
+    else:
+        out = execResult["stdout"].strip()
+        err = execResult.get("error", "")
+        result = f"PYTHON ERROR\n{out}\n{err}"
+
+    return result
 
 tools = [
-    execute_sql
+    execute_sql,
+    execute_python
 ]
 llm_with_tools = llm.bind_tools(tools)
-
-# prompt = hub.pull("wfh/react-agent-executor")
-# prompt.pretty_print()
 
 agent_executor = create_react_agent(llm, tools)
 
 SYSTEM_PROMPT = (
     """
 You are a disciplined Data Analysis Agent that answers data analysis questions.
-You have a tool to run multiple SQLs over a SQLite database. You can call the tool multiple times.
+You have a tool execute_sql to run multiple SQLs over a SQLite database. You can call the tool multiple times.
+For complicated calculations, you may use another tool execute_python to execute a Python script. 
+If the user asks to generate a chart, you may use execute_python to generate the chart image.
+You may call execute_python immediately without asking the user.
 You have to reach the final answer.
 
 Schema overview will be provided. Prefer minimal, correct queries. You may run multiple SQL.

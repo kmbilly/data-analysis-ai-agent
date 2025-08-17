@@ -7,3 +7,11 @@ langgraph
 python-dotenv
 openai
 pandas
+numpy
+matplotlib
+seaborn
+scipy
+statsmodels
+scikit-learn
+pillow
+pyarrow
