@@ -5,9 +5,12 @@ langchain_ollama
 langchain-sandbox
 langgraph
 python-dotenv
-notebook 
-ipykernel
-ipywidgets
+fastapi
+sse-starlette
+uvicorn
+# notebook 
+# ipykernel
+# ipywidgets
 openai
 pandas
 numpy

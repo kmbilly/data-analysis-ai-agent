@@ -9,8 +9,9 @@ from langchain_core.tools import tool
 from dotenv import load_dotenv
 import pandas as pd
 from database import Database
-from python import safe_exec_python
+from python_sandbox import safe_exec_python
 from langchain.callbacks.base import BaseCallbackHandler
+import json
 
 load_dotenv()
 
@@ -35,6 +36,7 @@ class LoggingCallbackHandler(BaseCallbackHandler):
 #     streaming=True,
 # )
 llm = ChatOpenAI(
+    model=LLM_MODEL,
     api_key=OPENAI_API_KEY, 
     base_url=OPENAI_API_BASE,
     temperature=0,
@@ -71,12 +73,12 @@ def execute_sql(queries: list[str]) -> list[Dict[str, Any]]:
 
     results = []
     for sql in queries:
-        print(f"Executing SQL: {sql}\n")
+        print(f"Tool - Executing SQL: {sql}\n")
 
         result = {}
         try:
             result = DB.run_sql(sql)
-            print(f"SQL result:\n{result}\n-----\n")
+            print(f"Tool - SQL result:\n{result}\n-----\n")
 
             result["sql"] = sql
             DATAFRAMES_RING.append(pd.DataFrame(result["rows"], columns=result["columns"]))
@@ -147,33 +149,55 @@ def execute_python(code: str) -> str:
 
     return result
 
+# @tool
+# def show_plotly_json(plotly_json) -> str:
+#     """Show a chart in Plotly JSON format.
+
+#     Args:
+#         plotly_json: Plotly JSON string for the chart
+#     """
+#     print(json.dumps(plotly_json))
+#     return "Chart has been shown to the user."
+
 tools = [
     execute_sql,
+    # show_plotly_json,
     execute_python
 ]
 llm_with_tools = llm.bind_tools(tools)
 
 agent_executor = create_react_agent(llm, tools)
 
+
 SYSTEM_PROMPT = (
     """
-You are a disciplined Data Analysis Agent that answers data analysis questions.
+You are a disciplined Data Analysis Agent that answers data analysis questions from a business user.
 You have a tool execute_sql to run multiple SQLs over a SQLite database. You can call the tool multiple times.
 For complicated calculations, you may use another tool execute_python to execute a Python script. 
 If the user asks to generate a chart, you may use execute_python to generate the chart image.
-You may call execute_python immediately without asking the user.
 You have to reach the final answer.
+Do not mention the existance of database and any SQLs.
 
 Schema overview will be provided. Prefer minimal, correct queries. You may run multiple SQL.
     """
 ).strip()
 
-def run_once(question: str) -> str:
-    system_prompt = {"role": "system", "content": SYSTEM_PROMPT}
+def get_agent_executor():
     schema = DB.schema_overview()
+    return {
+        "executor": agent_executor,
+        "system_prompt": {"role": "system", "content": SYSTEM_PROMPT + "\n\nSCHEMA\n" + schema + "\n"}
+    }
+
+def get_generated_images():
+    return GENERATED_IMAGES
+
+def run_once(question: str) -> str:
+    schema = DB.schema_overview()
+    system_prompt = {"role": "system", "content": SYSTEM_PROMPT + "\n\nSCHEMA\n" + schema + "\n"}
     user_prompt = {
         "role": "user",
-        "content": f"SCHEMA\n{schema}\n\nUSER_QUESTION\n{question}"
+        "content": question
     }
 
     messages = [
