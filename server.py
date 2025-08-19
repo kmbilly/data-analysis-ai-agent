@@ -6,7 +6,7 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
-from main import get_agent_executor, get_generated_images
+from main import get_agent_executor, get_generated_images, clear_generated_images 
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,13 +43,26 @@ async def event_generator(messages):
         },
         stream_mode="messages"
     ):
-        if hasattr(chunk, "tool_call_id"):
-            text = "\n\n[Executing Tool...]\n\n"
-            if chunk.name == "execute_sql":
-                text = "\n\n[Retrieving Data...]\n\n"
-            elif chunk.name == "execute_python":
-                text = "\n\n[Executing Python...]\n\n"
-                
+        text = ""
+        if hasattr(chunk, "tool_calls") and chunk.tool_calls:
+            if len(chunk.tool_calls) > 0:
+                tool_name = chunk.tool_calls[0]["name"]
+                text = "\n\n[Executing Tool...]\n\n"
+                if tool_name == "execute_sql":
+                    text = "\n\n[Retrieving Data...]\n\n"
+                elif tool_name == "execute_python":
+                    text = "\n\n[Executing Python...]\n\n"
+                else:
+                    text = "\n\n[Executing Tool...]\n\n"
+        elif hasattr(chunk, "tool_call_id") and chunk.tool_call_id:
+            tool_name = chunk.name
+            text = "\n\n[Execution completed]\n\n"
+            if tool_name == "execute_sql":
+                text = "\n\n[Data retrieved]\n\n"
+            elif tool_name == "execute_python":
+                text = "\n\n[Python executed]\n\n"
+            else:
+                text = "\n\n[Execution completed]\n\n"
         else:
             text = chunk.content
 
@@ -63,6 +76,8 @@ async def event_generator(messages):
         for image in images:
             md_image = f"\n![Chart]({image})\n"
             yield f"{json.dumps({'choices':[{'delta':{'content': md_image}}]})}"
+
+    clear_generated_images()
 
     yield "[DONE]"
 
