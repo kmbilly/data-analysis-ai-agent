@@ -6,7 +6,7 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
-from main import get_agent_executor, get_generated_images, clear_generated_images 
+from main import get_agent_executor, get_generated_images, clear_memory
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -77,7 +77,7 @@ async def event_generator(messages):
             md_image = f"\n![Chart]({image})\n"
             yield f"{json.dumps({'choices':[{'delta':{'content': md_image}}]})}"
 
-    clear_generated_images()
+    clear_memory()
 
     yield "[DONE]"
 

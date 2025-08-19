@@ -193,8 +193,9 @@ def get_agent_executor():
 def get_generated_images():
     return GENERATED_IMAGES
 
-def clear_generated_images():
+def clear_memory():
     GENERATED_IMAGES.clear()
+    DATAFRAMES_RING.clear()
 
 def run_once(question: str) -> str:
     schema = DB.schema_overview()
