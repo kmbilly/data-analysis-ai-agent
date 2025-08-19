@@ -183,6 +183,7 @@ Schema overview will be provided. Prefer minimal, correct queries. You may run m
 ).strip()
 
 def get_agent_executor():
+    print("🧠 LLM model:", LLM_MODEL)
     schema = DB.schema_overview()
     return {
         "executor": agent_executor,
@@ -191,6 +192,9 @@ def get_agent_executor():
 
 def get_generated_images():
     return GENERATED_IMAGES
+
+def clear_generated_images():
+    GENERATED_IMAGES.clear()
 
 def run_once(question: str) -> str:
     schema = DB.schema_overview()
