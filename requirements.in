@@ -7,7 +7,7 @@ langgraph
 python-dotenv
 fastapi
 sse-starlette
-uvicorn
+uvicorn[standard]
 # notebook 
 # ipykernel
 # ipywidgets
