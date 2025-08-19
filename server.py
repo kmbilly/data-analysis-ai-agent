@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import json
 from sse_starlette import EventSourceResponse
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 from main import get_agent_executor, get_generated_images
 from dotenv import load_dotenv
-import asyncio
 
 load_dotenv()
 
@@ -81,6 +82,10 @@ async def chat_completions(request: dict):
     #         "choices": [{"message": {"role": "assistant", "content": output}}],
     #     }
 
+middleware = [
+    Middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=["*"], allow_credentials=True)
+]
+
 app = Starlette(routes=[
     Route("/v1/chat/completions", chat_completions, methods=["POST"])
-])
+], middleware=middleware)
