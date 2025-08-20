@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 from typing import Any, Dict, List, Optional, TypedDict, Literal
-from langchain_ollama import ChatOllama
+# from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langchain import hub
 from langgraph.prebuilt import create_react_agent
@@ -108,12 +108,6 @@ def execute_python(code: str) -> str:
     - pd
     - numpy
     - matplotlib
-    - seaborn
-    - scipy
-    - statsmodels
-    - sklearn
-    - PIL
-    - pyarrow
 
     Args:
         code: Python script to execute

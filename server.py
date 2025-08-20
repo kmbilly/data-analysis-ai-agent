@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from sse_starlette import EventSourceResponse
+from starlette.responses import PlainTextResponse
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
@@ -97,10 +98,14 @@ async def chat_completions(request: dict):
     #         "choices": [{"message": {"role": "assistant", "content": output}}],
     #     }
 
+async def check_status(request: dict):
+    return PlainTextResponse("healthy")
+
 middleware = [
     Middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=["*"], allow_credentials=True)
 ]
 
 app = Starlette(routes=[
-    Route("/v1/chat/completions", chat_completions, methods=["POST"])
+    Route("/v1/chat/completions", chat_completions, methods=["POST"]),
+    Route("/status", check_status)
 ], middleware=middleware)

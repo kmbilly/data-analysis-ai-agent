@@ -1,23 +1,18 @@
 langchain
 langchain-community
 langchain-openai
-langchain_ollama
-langchain-sandbox
 langgraph
 python-dotenv
 fastapi
 sse-starlette
 uvicorn[standard]
-# notebook 
-# ipykernel
-# ipywidgets
-openai
+# openai
 pandas
 numpy
 matplotlib
-seaborn
-scipy
-statsmodels
-scikit-learn
-pillow
-pyarrow
+# seaborn
+# scipy
+# statsmodels
+# scikit-learn
+# pillow
+# pyarrow

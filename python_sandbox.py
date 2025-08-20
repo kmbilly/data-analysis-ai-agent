@@ -4,12 +4,12 @@ import traceback
 import pandas as pd
 import numpy
 import matplotlib
-import seaborn
-import scipy
-import statsmodels
-import sklearn
-import PIL
-import pyarrow
+#import seaborn
+#import scipy
+#import statsmodels
+#import sklearn
+#import PIL
+#import pyarrow
 
 def safe_exec_python(code: str, dataframes: List[pd.DataFrame], image_bytes) -> Dict[str, Any]:
     # Minimal sandbox: no builtins except a tiny whitelist, no file/network ops
@@ -28,12 +28,12 @@ def safe_exec_python(code: str, dataframes: List[pd.DataFrame], image_bytes) -> 
         "pd": pd,
         "numpy": numpy,
         "matplotlib": matplotlib,
-        "seaborn": seaborn,
-        "scipy": scipy,
-        "statsmodels": statsmodels,
-        "sklearn": sklearn,
-        "PIL": PIL,
-        "pyarrow": pyarrow,
+#        "seaborn": seaborn,
+#        "scipy": scipy,
+#        "statsmodels": statsmodels,
+#        "sklearn": sklearn,
+#        "PIL": PIL,
+#        "pyarrow": pyarrow,
         # Provide recent SQL results
         "dataframes": dataframes,
         "image_bytes": image_bytes
